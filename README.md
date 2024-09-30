@@ -25,6 +25,9 @@ https://help.aliyun.com/document_detail/2329850.html?spm=a2c4g.2261126.0.0.f3be1
 
 `!git clone https://github.com/hiyouga/LLaMA-Factory.git`
 
+cd到Llamafactory目录下,加载依赖项
+`!pip install -e .[torch,metrics]`
+
 ### 4.1加载数据
 
 将转换好的.json数据放入Llamafactory中的data文件中，并修改配置文件data_set.json
@@ -38,11 +41,10 @@ https://help.aliyun.com/document_detail/2329850.html?spm=a2c4g.2261126.0.0.f3be1
   }
 ```
 
-
-
 ### 4.2trian
 
-cd到Llamafactory目录下 `!llamafactory-cli webui` 启动webui界面
+cd到Llamafactory目录下 
+`!llamafactory-cli webui` 启动webui界面
 
 ![alt text](./images/image.png)
 下拉找到训练就可以开始微调训练
@@ -82,3 +84,52 @@ cd到Llamafactory目录下 `!llamafactory-cli webui` 启动webui界面
 Export是将我们微调的模型进行导出，我的理解是(将训练好的lora部分和原本的模型进行合并)
 
 这部分只用设置输出路径就可以进行导出了
+
+## 5部署
+
+## 5.1 Ollama部署
+
+在服务器上部署
+
+首先拉取ollma文件
+
+`modelscope download --model=modelscope/ollama-linux --local_dir ./ollama-linux --revision v0.3.12`
+
+新建创建 Modelfile 文件，写入
+
+`FROM ./your_model_path`
+
+- 在ollama文件中创建模型
+
+`ollama create mymodel -f Modelfile`
+
+- Llama.cpp
+
+    如果在ollama创建模型文件的时候遇见 `Models based on 'Qwen2ForCausalLM' are not yet supported `的问题，可使用llama.cpp,导出gguf格式的文件再进行部署推理
+
+    首先拉取llama.cpp文件
+
+    `!git clone https://github.com/ggerganov/llama.cpp.git`
+
+    ```python
+    # 需要安装相关的库
+    cd llama.cpp
+    pip install -r requirements.txt
+    # 验证环境
+    python convert_hf_to_gguf.py -h
+
+    # 使用脚本进行模型转换，可以选择量化方式
+    python convert_hf_to_gguf.py ../yourmodelpath --outfile out_file_name.gguf --outtype f16
+    ```
+得到.gguf文件
+然后重新使用`ollama create mymodel -f Modelfile`创建模型
+
+- 最后使用ollama推理
+`ollama run mymodel`
+
+此时推理出现 输出不停止的情况？
+
+
+
+
+
