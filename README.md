@@ -3,7 +3,12 @@
 
 ## 1.数据集准备
 
+下载需要处理的文本数据，最好转置为txt文件，然后使用bert模型进行chunk切分
+
+切分后使用百炼的API调用大模型进行数据集构建
+
 https://www.cnblogs.com/chentiao/p/17386131.html
+https://blog.csdn.net/yierbubu1212/article/details/142635578?spm=1001.2014.3001.5502
 
 ## 2.服务器搭建
 
