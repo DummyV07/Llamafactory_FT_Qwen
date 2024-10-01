@@ -10,6 +10,10 @@
 https://www.cnblogs.com/chentiao/p/17386131.html
 https://blog.csdn.net/yierbubu1212/article/details/142635578?spm=1001.2014.3001.5502
 
+
+当然你也可以直接下载我的数据集 
+https://modelscope.cn/datasets/Dummyv07/Crimina_Law_Dataset/files
+不用谢我 我叫雷锋
 ## 2.服务器搭建
 
 由于算力限制选择阿里云服务器
