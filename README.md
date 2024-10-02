@@ -1,6 +1,13 @@
 # Llamafactory_FT_Qwen
 基于Llamaindex微调qwen2.5-7b
 
+
+## 效果对比
+![alt text](./images/image2.png)
+利用刑法数据集微调后
+![alt text](./images/image3.png)
+存在问题：
+每条回答基本都会带个前缀“根据提供的文本”，这里可能是生成数据中，有太多类似的回答造成了模型的过拟合。
 ## 1.数据集准备
 
 下载需要处理的文本数据，最好转置为txt文件，然后使用bert模型进行chunk切分
@@ -131,14 +138,84 @@ Export是将我们微调的模型进行导出，我的理解是(将训练好的l
     python convert_hf_to_gguf.py ../yourmodelpath --outfile out_file_name.gguf --outtype f16
     ```
 得到.gguf文件
-然后重新使用`ollama create mymodel -f Modelfile`创建模型
+然后重新使用`ollama create mymodel -f Modelfile`创建模型，Modelfile是一个指向文件，需要指到gguf文件的路径，还可以在里面配置一个模型参数。
+
+解决方式：
+```python
+#在modelfile文件中对大模型参数进行配置
+
+FROM ./llama.cpp/qwen_7b_law.gguf
+
+# set the temperature to 1 [higher is more creative, lower is more coherent]
+PARAMETER temperature 0.7
+PARAMETER top_p 0.8
+PARAMETER repeat_penalty 1.05
+PARAMETER top_k 20
+
+TEMPLATE """{{ if .Messages }}
+{{- if or .System .Tools }}<|im_start|>system
+{{ .System }}
+{{- if .Tools }}
+
+# Tools
+
+You are provided with function signatures within <tools></tools> XML tags:
+<tools>{{- range .Tools }}
+{"type": "function", "function": {{ .Function }}}{{- end }}
+</tools>
+
+For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+<tool_call>
+{"name": <function-name>, "arguments": <args-json-object>}
+</tool_call>
+{{- end }}<|im_end|>
+{{ end }}
+{{- range $i, $_ := .Messages }}
+{{- $last := eq (len (slice $.Messages $i)) 1 -}}
+{{- if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{ else if eq .Role "assistant" }}<|im_start|>assistant
+{{ if .Content }}{{ .Content }}
+{{- else if .ToolCalls }}<tool_call>
+{{ range .ToolCalls }}{"name": "{{ .Function.Name }}", "arguments": {{ .Function.Arguments }}}
+{{ end }}</tool_call>
+{{- end }}{{ if not $last }}<|im_end|>
+{{ end }}
+{{- else if eq .Role "tool" }}<|im_start|>user
+<tool_response>
+{{ .Content }}
+</tool_response><|im_end|>
+{{ end }}
+{{- if and (ne .Role "assistant") $last }}<|im_start|>assistant
+{{ end }}
+{{- end }}
+{{- else }}
+{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+{{ end }}{{ .Response }}{{ if .Response }}<|im_end|>{{ end }}"""
+
+# set the system message
+SYSTEM """You are Qwen, created by Alibaba Cloud. You are a helpful assistant."""
+```
 
 - 最后使用ollama推理
 `ollama run mymodel`
 
-此时推理出现 输出不停止的情况？
 
+ollama常用指令：
+```python
+ollama serve # 启动ollama
+ollama create # 从模型文件创建模型
+ollama show  # 显示模型信息
+ollama run  # 运行模型，会先自动下载模型
+ollama pull  # 从注册仓库中拉取模型
+ollama push  # 将模型推送到注册仓库
+ollama list  # 列出已下载模型
+ollama ps  # 列出正在运行的模型
+ollama cp  # 复制模型
+ollama rm  # 删除模型
 
-
-
-
+```
