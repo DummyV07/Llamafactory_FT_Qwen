@@ -140,6 +140,8 @@ Export是将我们微调的模型进行导出，我的理解是(将训练好的l
 得到.gguf文件
 然后重新使用`ollama create mymodel -f Modelfile`创建模型，Modelfile是一个指向文件，需要指到gguf文件的路径，还可以在里面配置一个模型参数。
 
+
+此时出现模型输出不停止的情况
 解决方式：
 ```python
 #在modelfile文件中对大模型参数进行配置
